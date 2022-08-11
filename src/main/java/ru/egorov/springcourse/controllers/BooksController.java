@@ -10,6 +10,7 @@ import ru.egorov.springcourse.models.Person;
 import ru.egorov.springcourse.services.BooksService;
 import ru.egorov.springcourse.services.PeopleService;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.Optional;
 
@@ -27,8 +28,15 @@ public class BooksController {
     }
 
     @GetMapping()
-    public String index(Model model) {
-        model.addAttribute("books", booksService.findAll());
+    public String index(Model model, HttpServletRequest request) {
+        if (request.getParameter("page") == null & request.getParameter("books_per_page") == null)
+            model.addAttribute("books", booksService.findAll());
+        else {
+            int page = Integer.parseInt(request.getParameter("page"));
+            int booksPerPage = Integer.parseInt(request.getParameter("books_per_page"));
+            model.addAttribute("books", booksService.findAll(page, booksPerPage));
+        }
+
         return "books/index";
     }
 

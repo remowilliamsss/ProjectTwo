@@ -1,8 +1,6 @@
 package ru.egorov.springcourse.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -14,6 +12,7 @@ import ru.egorov.springcourse.services.PeopleService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.Collections;
 import java.util.Optional;
 
 @Controller
@@ -112,5 +111,14 @@ public class BooksController {
     public String assign(@PathVariable("id") int id, @ModelAttribute("person") Person selectedPerson) {
         booksService.assign(id, selectedPerson);
         return "redirect:/books/" + id;
+    }
+
+    @GetMapping("/search")
+    public String search(Model model, HttpServletRequest request) {
+        if (request.getParameter("q") != null)
+            model.addAttribute("books", booksService.findBySearch(request.getParameter("q")));
+        else
+            model.addAttribute("books", Collections.emptyList());
+        return "/books/search";
     }
 }

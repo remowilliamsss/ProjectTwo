@@ -1,6 +1,8 @@
 package ru.egorov.springcourse.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -29,12 +31,21 @@ public class BooksController {
 
     @GetMapping()
     public String index(Model model, HttpServletRequest request) {
-        if (request.getParameter("page") == null & request.getParameter("books_per_page") == null)
-            model.addAttribute("books", booksService.findAll());
-        else {
-            int page = Integer.parseInt(request.getParameter("page"));
-            int booksPerPage = Integer.parseInt(request.getParameter("books_per_page"));
-            model.addAttribute("books", booksService.findAll(page, booksPerPage));
+        if (request.getParameter("sort_by_year") != null) {
+            if (request.getParameter("page") != null & request.getParameter("books_per_page") != null) {
+                model.addAttribute("books", booksService.findAll(request.getParameter("page"),
+                        request.getParameter("books_per_page"), request.getParameter("sort_by_year")));
+                } else {
+                    model.addAttribute("books", booksService.
+                            findAll(request.getParameter("sort_by_year")));
+                }
+        } else {
+            if (request.getParameter("page") != null & request.getParameter("books_per_page") != null) {
+                model.addAttribute("books", booksService.
+                        findAll(request.getParameter("page"), request.getParameter("books_per_page")));
+            } else {
+                model.addAttribute("books", booksService.findAll());
+            }
         }
 
         return "books/index";

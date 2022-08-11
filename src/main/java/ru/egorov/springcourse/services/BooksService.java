@@ -1,6 +1,7 @@
 package ru.egorov.springcourse.services;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.egorov.springcourse.models.Book;
@@ -24,8 +25,32 @@ public class BooksService {
         return booksRepository.findAll();
     }
 
-    public List<Book> findAll(int page, int booksPerPage) {
+    public List<Book> findAll(String sortByYearParameter) {
+        boolean sortByYear = Boolean.parseBoolean(sortByYearParameter);
+
+        if (sortByYear)
+            return booksRepository.findAll(Sort.by("year"));
+        else
+            return booksRepository.findAll();
+    }
+
+    public List<Book> findAll(String pageParameter, String booksPerPageParameter) {
+        int page = Integer.parseInt(pageParameter);
+        int booksPerPage = Integer.parseInt(booksPerPageParameter);
+
         return booksRepository.findAll(PageRequest.of(page, booksPerPage)).getContent();
+    }
+
+    public List<Book> findAll(String pageParameter, String booksPerPageParameter, String sortByYearParameter) {
+        int page = Integer.parseInt(pageParameter);
+        int booksPerPage = Integer.parseInt(booksPerPageParameter);
+        boolean sortByYear = Boolean.parseBoolean(sortByYearParameter);
+
+        if (sortByYear)
+            return booksRepository.findAll(PageRequest.of(page, booksPerPage, Sort.by("year")))
+                    .getContent();
+        else
+            return booksRepository.findAll(PageRequest.of(page, booksPerPage)).getContent();
     }
 
     public Book findById(int id) {

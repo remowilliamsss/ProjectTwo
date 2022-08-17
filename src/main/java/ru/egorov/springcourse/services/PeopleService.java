@@ -7,10 +7,7 @@ import ru.egorov.springcourse.models.Book;
 import ru.egorov.springcourse.models.Person;
 import ru.egorov.springcourse.repositories.PeopleRepository;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
@@ -58,6 +55,13 @@ public class PeopleService {
 
         if (foundPerson.isPresent()) {
             Hibernate.initialize(foundPerson.get().getBooks());
+
+            foundPerson.get().getBooks().forEach(book -> {
+                long diffInMillies = Math.abs(book.getTakenAt().getTime() - new Date().getTime());
+
+                if (diffInMillies > 864000000)
+                    book.setBookOverdue(true);
+            });
             return foundPerson.get().getBooks();
         } else
             return Collections.emptyList();

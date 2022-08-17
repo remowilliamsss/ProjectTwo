@@ -1,5 +1,6 @@
 package ru.egorov.springcourse.services;
 
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -8,8 +9,8 @@ import ru.egorov.springcourse.models.Book;
 import ru.egorov.springcourse.models.Person;
 import ru.egorov.springcourse.repositories.BooksRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.sql.Timestamp;
+import java.util.*;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,35 +26,21 @@ public class BooksService {
         return booksRepository.findAll();
     }
 
-    public List<Book> findAll(String sortByYearParameter) {
-        boolean sortByYear = Boolean.parseBoolean(sortByYearParameter);
-
+    public List<Book> findAll(boolean sortByYear) {
         if (sortByYear)
             return booksRepository.findAll(Sort.by("year"));
         else
             return booksRepository.findAll();
     }
 
-    public List<Book> findAll(String pageParameter, String booksPerPageParameter) {
-        int page = Integer.parseInt(pageParameter);
-        int booksPerPage = Integer.parseInt(booksPerPageParameter);
-
-        return booksRepository.findAll(PageRequest.of(page, booksPerPage)).getContent();
-    }
-
-    public List<Book> findAll(String pageParameter, String booksPerPageParameter, String sortByYearParameter) {
-        int page = Integer.parseInt(pageParameter);
-        int booksPerPage = Integer.parseInt(booksPerPageParameter);
-        boolean sortByYear = Boolean.parseBoolean(sortByYearParameter);
-
+    public List<Book> findAll(Integer page, Integer booksPerPage, boolean sortByYear) {
         if (sortByYear)
-            return booksRepository.findAll(PageRequest.of(page, booksPerPage, Sort.by("year")))
-                    .getContent();
+            return booksRepository.findAll(PageRequest.of(page, booksPerPage, Sort.by("year"))).getContent();
         else
             return booksRepository.findAll(PageRequest.of(page, booksPerPage)).getContent();
     }
 
-    public List<Book> findBySearch(String query) {
+    public List<Book> searchByTitle(String query) {
         return booksRepository.findByTitleStartingWith(query);
     }
 
@@ -70,7 +57,10 @@ public class BooksService {
 
     @Transactional
     public void update(int id, Book updatedBook) {
+        Book bookToBeUpdated = booksRepository.findById(id).get();
+
         updatedBook.setId(id);
+        updatedBook.setOwner(bookToBeUpdated.getOwner());
 
         booksRepository.save(updatedBook);
     }
@@ -80,25 +70,27 @@ public class BooksService {
         booksRepository.deleteById(id);
     }
 
-    public Optional<Person> getBookOwner(int id) {
-        Book foundBook = booksRepository.findById(id).get();
+    public Person getBookOwner(int id) {
 
-        return Optional.ofNullable(foundBook.getOwner());
+        return booksRepository.findById(id).map(Book::getOwner).orElse(null);
     }
 
     @Transactional
     public void release(int id) {
-        Book foundBook = booksRepository.findById(id).get();
-        foundBook.setOwner(null);
-
-        booksRepository.save(foundBook);
+        booksRepository.findById(id).ifPresent(
+                book -> {
+                    book.setOwner(null);
+                    book.setTakenAt(null);
+                });
     }
 
     @Transactional
     public void assign(int id, Person selectedPerson) {
-        Book foundBook = booksRepository.findById(id).get();
-        foundBook.setOwner(selectedPerson);
-
-        booksRepository.save(foundBook);
+        booksRepository.findById(id).ifPresent(
+                book -> {
+                    book.setOwner(selectedPerson);
+                    book.setTakenAt(new Date()); // текущее время
+                }
+        );
     }
 }

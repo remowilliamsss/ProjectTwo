@@ -29,23 +29,13 @@ public class BooksController {
     }
 
     @GetMapping()
-    public String index(Model model, HttpServletRequest request) {
-        if (request.getParameter("sort_by_year") != null) {
-            if (request.getParameter("page") != null & request.getParameter("books_per_page") != null) {
-                model.addAttribute("books", booksService.findAll(request.getParameter("page"),
-                        request.getParameter("books_per_page"), request.getParameter("sort_by_year")));
-                } else {
-                    model.addAttribute("books", booksService.
-                            findAll(request.getParameter("sort_by_year")));
-                }
-        } else {
-            if (request.getParameter("page") != null & request.getParameter("books_per_page") != null) {
-                model.addAttribute("books", booksService.
-                        findAll(request.getParameter("page"), request.getParameter("books_per_page")));
-            } else {
-                model.addAttribute("books", booksService.findAll());
-            }
-        }
+    public String index(Model model, @RequestParam(value = "page", required = false) Integer page,
+                        @RequestParam(name = "books_per_page", required = false) Integer booksPerPage,
+                        @RequestParam(name = "sort_by_year", required = false) boolean sortByYear) {
+        if (page == null || booksPerPage == null)
+            model.addAttribute("books", booksService.findAll(sortByYear)); // выдача всех книг
+        else
+            model.addAttribute("books", booksService.findAll(page, booksPerPage, sortByYear));
 
         return "books/index";
     }
@@ -54,10 +44,10 @@ public class BooksController {
     public String show(@PathVariable("id") int id, Model model, @ModelAttribute("person") Person person) {
         model.addAttribute("book", booksService.findById(id));
 
-        Optional<Person> bookOwner = booksService.getBookOwner(id);
+        Person bookOwner = booksService.getBookOwner(id);
 
-        if (bookOwner.isPresent())
-            model.addAttribute("owner", bookOwner.get());
+        if (bookOwner != null)
+            model.addAttribute("owner", bookOwner);
         else
             model.addAttribute("people", peopleService.findAll());
 
@@ -114,11 +104,13 @@ public class BooksController {
     }
 
     @GetMapping("/search")
-    public String search(Model model, HttpServletRequest request) {
-        if (request.getParameter("q") != null)
-            model.addAttribute("books", booksService.findBySearch(request.getParameter("q")));
-        else
-            model.addAttribute("books", Collections.emptyList());
-        return "/books/search";
+    public String searchPage() {
+        return "books/search";
+    }
+
+    @PostMapping("/search")
+    public String makeSearch(Model model, @RequestParam("query") String query) {
+        model.addAttribute("books", booksService.searchByTitle(query));
+        return "books/search";
     }
 }
